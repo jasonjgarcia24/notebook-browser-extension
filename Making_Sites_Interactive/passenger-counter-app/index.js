@@ -15,16 +15,16 @@ let recordArray = [num_clicks]
 setRecords(recordArray)
 
 function increment() {
-    num_clicks = num_clicks + 1
+    num_clicks += 1
     countEl.innerText = num_clicks
 }
 
-function reset() {
+function save() {
     console.log(`Saved ${num_clicks} number of clicks!`)
     console.log(recordArray)
     recordArray.push(num_clicks)
 
-    if (recordArray.length > 3) {
+    if (recordArray.length > 3 || (recordArray.length == 2 && recordArray[0] == 0) ) {
         recordArray.shift()
     }
 
