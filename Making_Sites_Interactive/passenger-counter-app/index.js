@@ -5,18 +5,16 @@
 // increment the count variable when the button is clicked
 // change the count-el in the HTML to reflect the new count
 
-const reset_num_clicks = 0
-
 let countEl     = document.getElementById("count-el")
 let record      = document.getElementById("record")
-let num_clicks  = reset_num_clicks
+let num_clicks  = 0
 let recordArray = [num_clicks]
 
-setRecords(recordArray)
+record.textContent = "Record: - "
 
 function increment() {
     num_clicks += 1
-    countEl.innerText = num_clicks
+    countEl.textContent = num_clicks
 }
 
 function save() {
@@ -28,13 +26,13 @@ function save() {
         recordArray.shift()
     }
 
-    setRecords(recordArray)
+    setRecords()
 
-    num_clicks = reset_num_clicks
-    countEl.innerText = reset_num_clicks
+    num_clicks = -1
+    increment()
 }
 
-function setRecords(records) {  
-    record.innerText  = `Records: ${records}`.replace(/,/g, " - ")
+function setRecords() {  
+    record.textContent = `Records: ${recordArray}`.replace(/,/g, " - ")
 }
 
