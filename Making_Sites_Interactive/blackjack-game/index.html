@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="static/css/index.css">
+
+        <title>Blackjack Game</title>
+    </head>
+
+    <body>
+        <header>
+            <h1>Blackjack!!!</h1>
+            <p><span class="crown">♔</span> Test your luck <span class="crown">♕</span></p>
+        </header>
+        <div class="container">
+            <div class="table-container">
+                <div class="card-container">
+                    <div class="player-cards">
+                        <p id="message-status">Would you like to be dealed?</p>
+                    </div>
+                    <div class="dealer-cards">
+                        <p id="message-dealer"></p>
+                        <p id="message-hand"></p>
+                    </div>
+                </div>
+                <div class="gameboard-container">
+                    <button class="hand-button" id="hand-button" onclick="deal()">Deal Me</button>
+                    <button class="hold-button" id="hold-button" onclick="hold()">Hold</button>
+                    <div class="hand-container" id="hand-container">
+                        <div id="player-hand-container"></div>
+                        <div id="dealer-hand-container"></div>
+                    </div>
+                </div>
+            </div>            
+            <script src="index.js"></script>
+        </div>
+    </body>
+
+</html>

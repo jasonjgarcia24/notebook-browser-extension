@@ -1,0 +1,85 @@
+html,
+body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+header {    
+    background: #113;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px 0 rgba(1, 1, 1, 0.9), 0 2px 15px 0 rgba(1, 1, 1, 0.9);
+    margin: 10px 70px 0 70px;
+    padding: 10px;
+}
+
+header h1,
+header p {
+    color: whitesmoke;
+    text-align: center;
+    text-shadow: 2px 2px black;
+    font-family: Consolas;
+    font-weight: bold;
+    padding: 0;
+}
+
+header h1 {
+    font-size: 64px;
+    margin: 5px 0;
+}
+
+header p {    
+    font-size: 36px;
+    margin: 10px 0;
+}
+
+.crown {
+    color: gold;
+}
+
+.container {
+    /* margin: 40px auto 0 auto;     */
+    position: relative;
+    margin: 0 auto;
+    height: 64%;
+    width: 52%;
+    min-height: 391px;
+    min-width: 626px;
+    /* background-image: url("../img/table.jpg");
+    background-size: cover; */
+    border-radius: 10px;
+    box-shadow: 0 15px 25px 0 rgba(1, 1, 1, 0.9), 0 15px 25px 0 rgba(1, 1, 1, 0.9);
+    text-align: center;
+}
+
+.hand-card {
+    height: 250px;
+    border: none;
+    margin: 10px 0 0 5px;
+}
+
+/* .table-container {
+    height: 100%;
+    width: 100%;
+    position: relative;
+} */
+
+/* .card-container {
+    margin: 40px 40px 40px 40px;
+    background: white;
+} */
+
+/* .player-cards,
+.dealer-cards {
+    margin: 40px;
+}
+
+.hand-container {
+    display: flex;
+    width: 100%;
+}
+
+.hand-button,
+.hold-button {
+    margin: 5px;
+} */
