@@ -5,17 +5,6 @@ body {
     min-width: 400px;
 }
 
-#left-div {
-    height: 100%;
-    width: 70%;
-    margin: 0;
-    padding: 0;
-    position: absolute;
-    box-sizing: border-box;
-    background: #f8f4bf;
-    border-radius: 0px 500% 500% 0;
-}
-
 #right-div {
     height: 100%;
     width: 100%;
@@ -24,6 +13,17 @@ body {
     position: relative;
     box-sizing: border-box;
     background: #9ac9f8;
+}
+
+#left-div {
+    height: 100%;
+    width: 75%;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    box-sizing: border-box;
+    background: #f8f4bf;
+    border-radius: 0px 100% 100% 0;
 }
 
 #content-div {
