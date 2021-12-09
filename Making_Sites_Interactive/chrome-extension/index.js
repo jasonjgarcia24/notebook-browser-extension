@@ -1,4 +1,7 @@
 let myLeads = [];
+let idMap = new Map();
+let dragging, draggedOver;
+
 const inputEl    = document.getElementById("input-el");
 const inputBtn   = document.getElementById("button-input");
 const saveTabBtn = document.getElementById("button-tab");
@@ -10,8 +13,6 @@ const delete_emoji = "\u{274c}";
 const copy_emoji   = "\u{1f4cb}";
 const link_emoji   = "\u{1f517}";
 
-let base, dragging, draggedOver;
-let idMap = new Map();
 
 if (thisLocalStorage) { myLeads = thisLocalStorage; }
 if (myLeads) { setIdMap(myLeads) }
@@ -48,7 +49,7 @@ function addToLocalStorage(_lead) {
 }
 
 function removeFromLocalStorage(e) {
-    const lead = getLeadFromElementId(e.srcElement.id);
+    const lead = e.srcElement.id;
 
     if (idMap.has(lead)) {
         myLeads.splice(idMap.get(lead), 1);
@@ -59,30 +60,24 @@ function removeFromLocalStorage(e) {
 }
 
 function copyLead(e) {
-    const thisLead = e.srcElement.id;
-    let i = 0;
-    let match = false;
+    const lead = e.srcElement.id;
     let leadCopyStr = "";
 
-    while (i < myLeads.length || !match) {
-        if (thisLead.includes(myLeads[i])) {
-            leadCopyStr = myLeads[i].split(" ");
-            leadCopyStr = leadCopyStr[leadCopyStr.length - 1];
+    if (idMap.has(lead)) {
+        leadCopyStr = lead.split(" ");
+        leadCopyStr = leadCopyStr[leadCopyStr.length - 1];
 
-            navigator.clipboard.writeText(leadCopyStr);
-            match = true;
-        }
-        i++;
+        navigator.clipboard.writeText(leadCopyStr);
     }
 }
 
 function setDragging(e) {
-    dragging = getLeadFromElementId(e.target.id);
+    dragging = e.target.id;
 }
 
 function setDraggedOver(e) {
     e.preventDefault();
-    draggedOver = getLeadFromElementId(e.target.id);
+    draggedOver = e.target.id;
 }
 
 function compare(e) {
@@ -92,45 +87,37 @@ function compare(e) {
     addToLocalStorage(myLeads);
 }
 
-function getLeadFromElementId(_id) {    
-    let lead = _id.split("-");
-    lead = lead[lead.length - 1];
-
-    return lead
-}
-
 function renderLeads(_myLeads) {
     let listItems = ""
     let thisLead;
     for (let i = 0; i < _myLeads.length; i++) {
         thisLead = _myLeads[i];
         listItems += `
-            <li id="item-${thisLead}" draggable="true">
-                <span id="span-${thisLead}">
-                <button class="copy-lead" id="copy-${thisLead}">${copy_emoji}</button>|
-                <a class="link-lead" id="anchor-${thisLead}" href="${thisLead}" target="_blank">${link_emoji}</a>|
-                <button class="delete-lead" id="delete-${thisLead}">${delete_emoji}</button>| 
+            <li class="list-lead" id="${thisLead}" draggable="true">
+                <span id="${thisLead}">
+                <button class="copy-lead" id="${thisLead}">${copy_emoji}</button>|
+                <a class="link-lead" id="${thisLead}" href="${thisLead}" target="_blank">${link_emoji}</a>|
+                <button class="delete-lead" id="${thisLead}">${delete_emoji}</button>| 
                     ${thisLead}
                 </span>
             </li>
         `;
     }
     ulEl.innerHTML = listItems;
-
-    let listItem, deleteItem, copyItem;
+    
+    const listElements   = document.getElementsByClassName("list-lead");
+    const deleteElements = document.getElementsByClassName("delete-lead");
+    const copyElements   = document.getElementsByClassName("copy-lead");
 
     for (let i = 0; i < _myLeads.length; i++) {
-        thisLead   = _myLeads[i];
-        listItem   = document.getElementById(`item-${thisLead}`);
-        deleteItem = document.getElementById(`delete-${thisLead}`);
-        copyItem   = document.getElementById(`copy-${thisLead}`);
+        thisLead = _myLeads[i];
 
-        listItem.addEventListener("drag", setDragging);
-        listItem.addEventListener("dragover", setDraggedOver);
-        listItem.addEventListener("drop", compare);
+        listElements[i].addEventListener("drag", setDragging);
+        listElements[i].addEventListener("dragover", setDraggedOver);
+        listElements[i].addEventListener("drop", compare);
 
-        deleteItem.addEventListener("click", removeFromLocalStorage);
-        copyItem.addEventListener("click", copyLead);
+        deleteElements[i].addEventListener("click", removeFromLocalStorage);
+        copyElements[i].addEventListener("click", copyLead);
     }
 }
 
