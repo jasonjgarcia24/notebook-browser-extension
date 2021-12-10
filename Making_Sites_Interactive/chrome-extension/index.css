@@ -1,16 +1,16 @@
-html {
-    border: 1px solid black;
-}
-
-body {
+html, body {
     margin: 0;
     padding: 0;
     font-family: Arial, Helvetica, sans-serif;
     min-width: 400px;
-    background: whitesmoke;
+    background: none;
 }
 
-#right-div {
+body {
+    border: 1px solid black;
+}
+
+.right-div {
     height: 100%;
     width: 100%;
     margin: 0;
@@ -20,7 +20,7 @@ body {
     background: #9ac9f8;
 }
 
-#left-div {
+.left-div {
     height: 100%;
     width: 75%;
     margin: 0;
@@ -31,7 +31,7 @@ body {
     border-radius: 0px 100% 100% 0;
 }
 
-#content-div {
+.content-div {
     margin: 0;
     padding: 15px;
     position: inherit;
@@ -53,6 +53,8 @@ input {
 .push-btn {
     margin: 15px 0 10px 0;     
     padding: 8px 12px;
+    background: #5086bd;
+    color: white;
     position: relative;
     letter-spacing: 0.7px;
     font-size: 14px;
@@ -66,23 +68,11 @@ input {
     text-shadow: 1px 1px 2px rgba(1, 1, 1, 0.4);
 }
 
-#button-input,
-#button-tab {
-    background: #5086bd;
-    color: white;
-}
-
-#button-remove {
-    margin: 0 0 10px 0;
-}
-
 .push-btn:active {
     transform: translateY(1px);
 }
 
-.delete-lead,
-.copy-lead,
-.link-lead {
+.btn-lead {
     padding: 0 2px;
     background: none;
     border: none;
@@ -93,7 +83,7 @@ input {
 .delete-lead:active,
 .copy-lead:active {
     transform: translateY(1px);
-} 
+}
 
 ul {
     margin-top: 10px;
@@ -105,7 +95,7 @@ li {
     margin-top: 5px;
 }
 
-a:link {
+a, a:visited {
     text-decoration: none;
 }
 

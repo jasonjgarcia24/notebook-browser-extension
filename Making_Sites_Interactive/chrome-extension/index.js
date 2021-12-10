@@ -95,9 +95,9 @@ function renderLeads(_myLeads) {
         listItems += `
             <li class="list-lead" id="${thisLead}" draggable="true">
                 <span id="${thisLead}">
-                <button class="copy-lead" id="${thisLead}">${copy_emoji}</button>|
-                <a class="link-lead" id="${thisLead}" href="${thisLead}" target="_blank">${link_emoji}</a>|
-                <button class="delete-lead" id="${thisLead}">${delete_emoji}</button>| 
+                <button class="btn-lead copy-lead" id="${thisLead}">${copy_emoji}</button>|
+                <a class="btn-lead link-lead" id="${thisLead}" href="${thisLead}" target="_blank">${link_emoji}</a>|
+                <button class="btn-lead delete-lead" id="${thisLead}">${delete_emoji}</button>| 
                     ${thisLead}
                 </span>
             </li>
