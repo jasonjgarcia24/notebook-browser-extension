@@ -1,61 +1,148 @@
-let myLeads = [];
-let idMap = new Map();
-let dragging, draggedOver;
-
-const inputEl    = document.getElementById("input-el");
-const inputBtn   = document.getElementById("button-input");
-const saveTabBtn = document.getElementById("button-tab");
-const deleteBtn  = document.getElementById("button-delete");
-const ulEl       = document.getElementById("ul-el");
-const thisLocalStorage = JSON.parse(localStorage.getItem("myLeads"));
+const inputEl          = document.getElementById("input-el");
+const inputBtn         = document.getElementById("button-input");
+const saveTabBtn       = document.getElementById("button-tab");
+const deleteBtn        = document.getElementById("button-delete");
+const navTabs          = document.getElementsByClassName("tab");
+const navTabContent    = document.getElementsByClassName("container-content-ul");
+const ulElements       = document.getElementsByClassName("content-ul");
+const leadsLocalStorage         = JSON.parse(localStorage.getItem("myLeads"));
+const leadsClassMapLocalStorage = new Map(JSON.parse(localStorage.getItem("leadsClassMap")));
 
 const delete_emoji = "\u{274c}";
 const copy_emoji   = "\u{1f4cb}";
 const link_emoji   = "\u{1f517}";
+const ul_finder    = /(?<=ul-)\w*[^ ]+/;
+const li_finder    = /(?<=li-)\w*[^ ]+/;
 
 
-if (thisLocalStorage) { myLeads = thisLocalStorage; }
-if (myLeads) { setIdMap(myLeads) }
+let myLeads       = [];
+let leadsIdMap    = new Map();
+let leadsClassMap = new Map();
+let ulMap         = new Map();
+let ulActive      = undefined;
+let dragging      = undefined;
+let draggedOver   = undefined;
 
+setActiveUl()
+setTabMap(navTabs, navTabContent)
 
-function setIdMap(_myLeads) {
-    idMap.clear();
-
-    for (let i = 0; i < _myLeads.length; i++) {
-        idMap.set(_myLeads[i], i);
-    }
-}
+if (leadsLocalStorage) { myLeads = leadsLocalStorage; }
+if (leadsClassMapLocalStorage) { leadsClassMap = leadsClassMapLocalStorage; }
+if (leadsClassMap.size) { setLeadsClassMap(leadsClassMap) }
+console.log(leadsClassMapLocalStorage)
 
 inputBtn.addEventListener("click", function () {
     if (!inputEl.value) { return };
+    
+    const _label = getUlLabel()
 
-    myLeads.push(inputEl.value);
-    addToLocalStorage(myLeads);
+    if (!leadsClassMap.has(_label)) {
+        leadsClassMap.set(_label, []);
+    }
+    leadsClassMap.get(_label).push(inputEl.value);
+
+    addToLocalStorage(leadsClassMap);
 
     inputEl.value = "";
 })
 
 saveTabBtn.addEventListener("click", function () {
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        myLeads.push(tabs[0].url);
-        addToLocalStorage(myLeads);
+        const _label = getUlLabel();
+        
+        leadsClassMap.get(_label).push(tabs[0].url);
+        addToLocalStorage(leadsClassMap);
     })
 })
 
+for (i = 0; i < navTabs.length; i++) {
+    let _tab = navTabs[i].className;
+
+    navTabs[i].addEventListener("click", function () {
+        let _div = ulMap.get(_tab);
+        let _ul  = _div.children[0];
+
+        for (let ii = 0; ii < navTabContent.length; ii++) {
+            navTabContent[ii].style.display = "none";
+        }
+
+        for (let ii = 0; ii < ulElements.length; ii++) {
+            ulElements[ii].className = ulElements[ii].className.replace(" __active__", "");
+        }
+
+        _div.style.display = "block";
+        _ul.className += " __active__";
+
+        setActiveUl()
+        renderLeads(leadsClassMap);
+    })
+}
+
+function setLeadsClassMap(_leadsClassMap) {
+    const _label = getUlLabel();
+
+    leadsClassMap.set(_label, []);
+
+    for (let i = 0; i < _leadsClassMap.length; i++) {
+        leadsClassMap.set(_leadsClassMap[i], i);
+    }
+}
+
+function setTabMap(_navTabs, _navTabContent) {
+    let ii   = 0;
+    let _tab = undefined;
+    let _div  = undefined;
+    const _tab_finder = /(?<=tab-).*\W?/;
+
+    for (let i = 0; i < _navTabs.length; i++) {
+        ii   = 0;
+        _tab = _navTabs[i].className.match(_tab_finder)[0].trim();
+
+        while (ii < _navTabContent.length && _div !== _tab) {
+            _div = _navTabContent[ii].className.match(ul_finder)[0].trim();
+            if (_div === _tab) {
+                ulMap.set(_navTabs[i].className, _navTabContent[ii]);
+            }
+            ii++;
+        }
+    }
+}
+
+function setActiveUl() {
+    let i    = 0;
+    let _ul  = undefined;
+    ulActive = undefined;
+
+    while (!ulActive && i < ulElements.length) {
+        _ul = ulElements[i];
+        if (_ul.className.includes(" __active__")) {
+            ulActive = _ul;
+        }
+        i++;
+    }
+}
+
+function getUlLabel() {
+    return ulActive.className.match(ul_finder)[0].trim();
+}
+
 function addToLocalStorage(_lead) {
-    localStorage.setItem("myLeads", JSON.stringify(_lead));
-    renderLeads(myLeads);
-    setIdMap(myLeads);
+    console.log(leadsClassMap)
+
+    localStorage.setItem("leadsClassMap", JSON.stringify([...leadsClassMap]));
+    renderLeads(leadsClassMap);
+    setLeadsClassMap(leadsClassMap);
 }
 
 function removeFromLocalStorage(e) {
-    const lead = e.srcElement.id;
+    const _label = getUlLabel()
+    const _lead  = e.srcElement.id;
 
-    if (idMap.has(lead)) {
-        myLeads.splice(idMap.get(lead), 1);
-        localStorage.setItem("myLeads", JSON.stringify(myLeads));
-        renderLeads(myLeads);
-        setIdMap(myLeads);
+    if (leadsIdMap.has(_label, _lead)) {
+        leadsClassMap.splice(leadsClassMap.get(_lead), 1);
+        localStorage.setItem("leadsClassMap", JSON.stringify([...leadsClassMap]));
+        renderLeads(leadsClassMap);
+        setLeadsClassMap(leadsClassMap);
     }
 }
 
@@ -63,7 +150,7 @@ function copyLead(e) {
     const lead = e.srcElement.id;
     let leadCopyStr = "";
 
-    if (idMap.has(lead)) {
+    if (leadsIdMap.has(lead)) {
         leadCopyStr = lead.split(" ");
         leadCopyStr = leadCopyStr[leadCopyStr.length - 1];
 
@@ -81,36 +168,41 @@ function setDraggedOver(e) {
 }
 
 function compare(e) {
-    myLeads.splice(idMap.get(dragging), 1);
-    myLeads.splice(idMap.get(draggedOver), 0, dragging);
+    leadsClassMap.splice(leadsIdMap.get(dragging), 1);
+    leadsClassMap.splice(leadsIdMap.get(draggedOver), 0, dragging);
     
-    addToLocalStorage(myLeads);
+    addToLocalStorage(leadsClassMap);
 }
 
-function renderLeads(_myLeads) {
-    let listItems = ""
-    let thisLead;
-    for (let i = 0; i < _myLeads.length; i++) {
-        thisLead = _myLeads[i];
-        listItems += `
-            <li class="list-lead" id="${thisLead}" draggable="true">
-                <span id="${thisLead}">
-                <button class="btn-lead copy-lead" id="${thisLead}">${copy_emoji}</button>|
-                <a class="btn-lead link-lead" id="${thisLead}" href="${thisLead}" target="_blank">${link_emoji}</a>|
-                <button class="btn-lead delete-lead" id="${thisLead}">${delete_emoji}</button>| 
-                    ${thisLead}
+function renderLeads(_leadsClassMap) {
+    let _listItems  = ""
+    let _label      = getUlLabel();
+    let _classLeads = _leadsClassMap.get(_label);
+    let _lead;
+    // console.log(_label)
+
+    for (let i = 0; i < _classLeads.length; i++) {
+        _lead = _classLeads[i];
+        _listItems += `
+            <li class="list-lead li-${_label}" id="${_lead}" draggable="true">
+                <span id="${_lead}">
+                <button class="btn btn-lead copy-lead" id="${_lead}">${copy_emoji}</button>|
+                <a class="btn btn-lead link-lead" id="${_lead}" href="${_lead}" target="_blank">${link_emoji}</a>|
+                <button class="btn btn-lead delete-lead" id="${_lead}">${delete_emoji}</button>| 
+                    ${_lead}
                 </span>
             </li>
         `;
     }
-    ulEl.innerHTML = listItems;
-    
+    ulActive.innerHTML = _listItems;
+    // console.log(ulActive)
+
     const listElements   = document.getElementsByClassName("list-lead");
     const deleteElements = document.getElementsByClassName("delete-lead");
     const copyElements   = document.getElementsByClassName("copy-lead");
 
-    for (let i = 0; i < _myLeads.length; i++) {
-        thisLead = _myLeads[i];
+    for (let i = 0; i < _classLeads.length; i++) {
+        _lead = _classLeads[i];
 
         listElements[i].addEventListener("drag", setDragging);
         listElements[i].addEventListener("dragover", setDraggedOver);
@@ -121,7 +213,8 @@ function renderLeads(_myLeads) {
     }
 }
 
-if (myLeads.length !== 0) {
-    renderLeads(myLeads);
+// console.log(leadsClassMap)
+if (leadsClassMap.size !== 0) {
+    renderLeads(leadsClassMap);
 }
 

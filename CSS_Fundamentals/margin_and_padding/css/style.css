@@ -1,6 +1,7 @@
-html {
-    font-family: "Calibri";
+body {
+    font-family: Consolas, Lucida Console, Candara, Trebuchet MS, Helvetica, sans-serif;
 }
+
 .card {
     margin: 0 auto;
     padding: 45px;

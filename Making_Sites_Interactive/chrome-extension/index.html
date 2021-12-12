@@ -3,14 +3,28 @@
         <link rel="stylesheet" href="index.css">
     </head>
     <body>
-        <div class="background-div right-div">
-            <div class="background-div left-div"></div>   
-            <div class="content-div">         
+        <div class="container-home container-right">
+            <div class="container-home container-left"></div>   
+            <div class="container-home-content">         
                 <input type="text" id="input-el">
-                <button id="button-input" class="btn push-btn">SAVE INPUT</button>
-                <button id="button-tab" class="btn push-btn">SAVE TAB</button>
-                <ul id="ul-el">
-                </ul>
+                <button class="btn push-btn" id="button-input">SAVE INPUT</button>
+                <button class="btn push-btn" id="button-tab">SAVE TAB</button>                
+                
+                <div class="container-tab">
+                    <a href="#" class="tab tab-home">My Pages</a>
+                    <a href="#" class="tab tab-reading">Reading List</a>
+                </div>
+
+                <div class="container-content-ul container-content-ul-home">
+                    <ul class="content-ul ul-home __active__">
+                    </ul>
+                </div>
+
+                <div class="container-content-ul container-content-ul-reading">
+                    <ul class="content-ul ul-reading">
+                    </ul>
+                </div>
+
                 <script src="index.js"></script>
             </div>
         </div>

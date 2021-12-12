@@ -4,7 +4,7 @@
     "name": "My Profiles",
     "action": {
         "default_popup": "index.html",
-        "default_icon": "me-colombia.png"
+        "default_icon": "icon.png"
     },
     "permissions": [
         "tabs"
