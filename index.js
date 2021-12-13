@@ -51,41 +51,26 @@ saveTabBtn.addEventListener("click", function () {
 
 function addNavTabEventListeners() {
     for (i = 0; i < navTabs.length; i++) {
-        let _tab = navTabs[i].className;
+        let _page = navTabs[i].className;
 
         navTabs[i].addEventListener("click", function () {
-            let _div = ulMap.get(_tab);
-            let _ul  = _div.children[0];
-
-            for (let ii = 0; ii < navTabContent.length; ii++) {
-                navTabContent[ii].style.display = "none";
-            }
-
-            for (let ii = 0; ii < ulElements.length; ii++) {
-                ulElements[ii].className = ulElements[ii].className.replace(" __active__", "");
-            }
-
-            _div.style.display = "block";
-            _ul.className += " __active__";
-
-            set_ulActive()
-            renderLeads(leadsClassMap);
+            setActivePage(_page);
         })
     }
 }
 
 function set_ulMap(_navTabs, _navTabContent) {
-    let ii   = 0;
-    let _tab = undefined;
-    let _div = undefined;
+    let ii    = 0;
+    let _page = undefined;
+    let _div  = undefined;
 
     for (let i = 0; i < _navTabs.length; i++) {
         ii   = 0;
-        _tab = _navTabs[i].className.match(tab_finder)[0].trim();
+        _page = _navTabs[i].className.match(tab_finder)[0].trim();
 
-        while (ii < _navTabContent.length && _div !== _tab) {
+        while (ii < _navTabContent.length && _div !== _page) {
             _div = _navTabContent[ii].className.match(ul_finder)[0].trim();
-            if (_div === _tab) {
+            if (_div === _page) {
                 ulMap.set(_navTabs[i].className, _navTabContent[ii]);
             }
             ii++;
@@ -100,7 +85,7 @@ function set_ulActive() {
 
     while (!ulActive && i < ulElements.length) {
         _ul = ulElements[i];
-        if (_ul.className.includes(" __active__")) {
+        if (_ul.className.includes(" __ul_active__")) {
             ulActive = _ul;
         }
         i++;
@@ -109,6 +94,25 @@ function set_ulActive() {
 
 function getPage() {
     return ulActive.className.match(ul_finder)[0].trim();
+}
+
+function setActivePage(_page) {
+    let _div = ulMap.get(_page);
+    let _ul  = _div.children[0];
+
+    for (let ii = 0; ii < navTabContent.length; ii++) {
+        navTabContent[ii].style.display = "none";
+    }
+
+    for (let ii = 0; ii < ulElements.length; ii++) {
+        ulElements[ii].className = ulElements[ii].className.replace(" __ul_active__", "");
+    }
+
+    _div.style.display = "block";
+    _ul.className += " __ul_active__";
+
+    set_ulActive()
+    renderLeads(leadsClassMap);
 }
 
 function updateLocalStorage(_leadsClassMap) {
