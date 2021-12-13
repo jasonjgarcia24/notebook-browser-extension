@@ -5,31 +5,25 @@ const deleteBtn        = document.getElementById("button-delete");
 const navTabs          = document.getElementsByClassName("tab");
 const navTabContent    = document.getElementsByClassName("container-content-ul");
 const ulElements       = document.getElementsByClassName("content-ul");
-const leadsLocalStorage         = JSON.parse(localStorage.getItem("myLeads"));
-const leadsClassMapLocalStorage = new Map(JSON.parse(localStorage.getItem("leadsClassMap")));
 
 const delete_emoji = "\u{274c}";
 const copy_emoji   = "\u{1f4cb}";
 const link_emoji   = "\u{1f517}";
 const ul_finder    = /(?<=ul-)\w*[^ ]+/;
 const li_finder    = /(?<=li-)\w*[^ ]+/;
+const tab_finder   = /(?<=tab-)\w*[^ ]+/;
 
-
-let myLeads       = [];
 let leadsIdMap    = new Map();
-let leadsClassMap = new Map();
+let leadsClassMap = new Map(JSON.parse(localStorage.getItem("leadsClassMap")));
 let ulMap         = new Map();
 let ulActive      = undefined;
 let dragging      = undefined;
 let draggedOver   = undefined;
+console.log(leadsClassMap)
+
 
 setActiveUl()
 setTabMap(navTabs, navTabContent)
-
-if (leadsLocalStorage) { myLeads = leadsLocalStorage; }
-if (leadsClassMapLocalStorage) { leadsClassMap = leadsClassMapLocalStorage; }
-if (leadsClassMap.size) { setLeadsClassMap(leadsClassMap) }
-console.log(leadsClassMapLocalStorage)
 
 inputBtn.addEventListener("click", function () {
     if (!inputEl.value) { return };
@@ -78,25 +72,14 @@ for (i = 0; i < navTabs.length; i++) {
     })
 }
 
-function setLeadsClassMap(_leadsClassMap) {
-    const _label = getUlLabel();
-
-    leadsClassMap.set(_label, []);
-
-    for (let i = 0; i < _leadsClassMap.length; i++) {
-        leadsClassMap.set(_leadsClassMap[i], i);
-    }
-}
-
 function setTabMap(_navTabs, _navTabContent) {
     let ii   = 0;
     let _tab = undefined;
     let _div  = undefined;
-    const _tab_finder = /(?<=tab-).*\W?/;
 
     for (let i = 0; i < _navTabs.length; i++) {
         ii   = 0;
-        _tab = _navTabs[i].className.match(_tab_finder)[0].trim();
+        _tab = _navTabs[i].className.match(tab_finder)[0].trim();
 
         while (ii < _navTabContent.length && _div !== _tab) {
             _div = _navTabContent[ii].className.match(ul_finder)[0].trim();
@@ -106,6 +89,7 @@ function setTabMap(_navTabs, _navTabContent) {
             ii++;
         }
     }
+    console.log("Active Tab: ", ulMap);
 }
 
 function setActiveUl() {
@@ -120,6 +104,7 @@ function setActiveUl() {
         }
         i++;
     }
+    console.log("Active UL: ", ulActive);
 }
 
 function getUlLabel() {
@@ -127,8 +112,6 @@ function getUlLabel() {
 }
 
 function addToLocalStorage(_lead) {
-    console.log(leadsClassMap)
-
     localStorage.setItem("leadsClassMap", JSON.stringify([...leadsClassMap]));
     renderLeads(leadsClassMap);
     setLeadsClassMap(leadsClassMap);
