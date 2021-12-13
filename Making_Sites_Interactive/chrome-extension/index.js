@@ -43,11 +43,8 @@ inputBtn.addEventListener("click", function () {
 saveTabBtn.addEventListener("click", function () {
     const _page = getPage();
 
-    // leadsClassMap.get(_page).push("hi_there");
-    // updateLocalStorage(leadsClassMap);
-
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        leadsClassMap.get(_page).push("hi_there");//tabs[0].url);
+        leadsClassMap.get(_page).push(tabs[0].url);
         updateLocalStorage(leadsClassMap);
     })
 })
@@ -157,8 +154,12 @@ function setDraggedOver(e) {
 }
 
 function compare(e) {
-    leadsClassMap.splice(leadsIdMap.get(dragging), 1);
-    leadsClassMap.splice(leadsIdMap.get(draggedOver), 0, dragging);
+    const _page = getPage();
+    const _idx_dragging    = leadsClassMap.get(_page).indexOf(dragging);
+    const _idx_draggedOver = leadsClassMap.get(_page).indexOf(draggedOver);
+
+    leadsClassMap.get(_page).splice(_idx_dragging, 1);
+    leadsClassMap.get(_page).splice(_idx_draggedOver, 0, dragging);
     
     updateLocalStorage(leadsClassMap);
 }
@@ -173,7 +174,7 @@ function renderLeads(_leadsClassMap) {
         _lead = _classLeads[i];
         _listItems += `
             <li class="list-lead li-${_page}" id="${_lead}" draggable="true">
-                <span id="${_page}">
+                <span id="${_lead}">
                 <button class="btn btn-lead copy-lead-${_page}-${_lead}" id="${_lead}">${copy_emoji}</button>|
                 <a class="btn btn-lead link-lead-${_page}-${_lead}" id="${_lead}" href="${_lead}" target="_blank">${link_emoji}</a>|
                 <button class="btn btn-lead delete-lead-${_page}-${_lead}" id="${_lead}">${delete_emoji}</button>| 
