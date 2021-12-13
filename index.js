@@ -93,7 +93,23 @@ function set_ulActive() {
 }
 
 function getPage() {
-    return ulActive.className.match(ul_finder)[0].trim();
+    const _page = ulActive.className.match(ul_finder)[0].trim();
+    ensurePageExists(_page);
+    
+    return _page;
+}
+
+function ensurePageExists(_page) {
+    let _storedPage = leadsClassMap.get(_page);
+
+    if (!_storedPage) {
+        leadsClassMap.set(_page, new Array());
+        updateLocalStorage(leadsClassMap)
+
+        _storedPage = leadsClassMap.get(_page);
+    }
+
+    return _storedPage;
 }
 
 function setActivePage(_page) {
