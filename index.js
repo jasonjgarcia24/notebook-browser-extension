@@ -7,6 +7,7 @@ const navTabs          = document.getElementsByClassName("tab");
 const navTabContent    = document.getElementsByClassName("container-content-ul");
 const ulElements       = document.getElementsByClassName("content-ul");
 
+const home_tab     = "home";
 const delete_emoji = "\u{274c}";
 const copy_emoji   = "\u{1f4cb}";
 const link_emoji   = "\u{1f517}";
@@ -14,30 +15,30 @@ const ul_finder    = /(?<=ul-)\w*[^ ]+/;
 const li_finder    = /(?<=li-)\w*[^ ]+/;
 const tab_finder   = /(?<=tab-)\w*[^ ]+/;
 
-let leadsIdMap    = new Map();
-let leadsClassMap = new Map(JSON.parse(localStorage.getItem("leadsClassMap")));
+let notesIdMap    = new Map();
+let notesClassMap = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
 let ulMap         = new Map();
 let ulActive      = undefined;
 let dragging      = undefined;
 let draggedOver   = undefined;
 
 
-setActivePage(navTabs[0].className.match(tab_finder)[0].trim())
-set_ulActive()
-set_ulMap(navTabs, navTabContent)
-addNavTabEventListeners()
+setActivePage(home_tab);
+set_ulActive();
+set_ulMap(navTabs, navTabContent);
+addNavTabEventListeners();
 
 inputBtn.addEventListener("click", function () {
     if (!inputEl.value) { return };
     
     const _label = getPage()
 
-    if (!leadsClassMap.has(_label)) {
-        leadsClassMap.set(_label, []);
+    if (!notesClassMap.has(_label)) {
+        notesClassMap.set(_label, []);
     }
-    leadsClassMap.get(_label).push(inputEl.value);
+    notesClassMap.get(_label).push(inputEl.value);
 
-    updateLocalStorage(leadsClassMap);
+    updateLocalStorage(notesClassMap);
 
     inputEl.value = "";
 })
@@ -46,13 +47,13 @@ saveTabBtn.addEventListener("click", function () {
     const _page = getPage();
 
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        leadsClassMap.get(_page).push(tabs[0].url);
-        updateLocalStorage(leadsClassMap);
+        notesClassMap.get(_page).push(tabs[0].url);
+        updateLocalStorage(notesClassMap);
     })
 })
 
 newNavTabBtn.addEventListener("click", function () {
-    renderNavTabs()
+    renderNavTabContents()
 })
 
 function addNavTabEventListeners() {
@@ -84,6 +85,7 @@ function set_ulMap(_navTabs, _navTabContent) {
             ii++;
         }
     }
+    console.log(ulMap)
 }
 
 function set_ulActive() {
@@ -108,13 +110,13 @@ function getPage() {
 }
 
 function ensurePageExists(_page) {
-    let _storedPage = leadsClassMap.get(_page);
+    let _storedPage = notesClassMap.get(_page);
 
     if (!_storedPage) {
-        leadsClassMap.set(_page, new Array());
-        updateLocalStorage(leadsClassMap)
+        notesClassMap.set(_page, new Array());
+        updateLocalStorage(notesClassMap)
 
-        _storedPage = leadsClassMap.get(_page);
+        _storedPage = notesClassMap.get(_page);
     }
 
     return _storedPage;
@@ -146,35 +148,35 @@ function setActivePage(_page) {
     _ul.className  += " __ul_active__";
 
     set_ulActive()
-    renderLeads(leadsClassMap);
+    renderPageNotes(notesClassMap);
 }
 
 function updateLocalStorage(_leadsClassMap) {
-    localStorage.setItem("leadsClassMap", JSON.stringify([..._leadsClassMap]));
-    renderLeads(_leadsClassMap);
+    localStorage.setItem("notesClassMap", JSON.stringify([..._leadsClassMap]));
+    renderPageNotes(_leadsClassMap);
 }
 
 function deleteNoteEventHandler(e) {
     const _page = getPage()
     const _lead_to_delete = e.srcElement.id;
-    const _new_leadsClassMap = leadsClassMap.get(_page).filter(_lead => _lead !== _lead_to_delete);
+    const _new_leadsClassMap = notesClassMap.get(_page).filter(_lead => _lead !== _lead_to_delete);
 
     console.log("_new_leadsClassMap: ", _new_leadsClassMap);
-    leadsClassMap.set(_page, _new_leadsClassMap);
+    notesClassMap.set(_page, _new_leadsClassMap);
 
-    updateLocalStorage(leadsClassMap);
-    renderLeads(leadsClassMap);
+    updateLocalStorage(notesClassMap);
+    renderPageNotes(notesClassMap);
 
     console.log(_page);
     console.log(_lead_to_delete);
-    console.log(leadsClassMap);
+    console.log(notesClassMap);
 }
 
 function copyNoteEventHandler(e) {
     const lead = e.srcElement.id;
     let leadCopyStr = "";
 
-    if (leadsIdMap.has(lead)) {
+    if (notesIdMap.has(lead)) {
         leadCopyStr = lead.split(" ");
         leadCopyStr = leadCopyStr[leadCopyStr.length - 1];
 
@@ -193,16 +195,16 @@ function setDraggedOver(e) {
 
 function compare(e) {
     const _page = getPage();
-    const _idx_dragging    = leadsClassMap.get(_page).indexOf(dragging);
-    const _idx_draggedOver = leadsClassMap.get(_page).indexOf(draggedOver);
+    const _idx_dragging    = notesClassMap.get(_page).indexOf(dragging);
+    const _idx_draggedOver = notesClassMap.get(_page).indexOf(draggedOver);
 
-    leadsClassMap.get(_page).splice(_idx_dragging, 1);
-    leadsClassMap.get(_page).splice(_idx_draggedOver, 0, dragging);
+    notesClassMap.get(_page).splice(_idx_dragging, 1);
+    notesClassMap.get(_page).splice(_idx_draggedOver, 0, dragging);
     
-    updateLocalStorage(leadsClassMap);
+    updateLocalStorage(notesClassMap);
 }
 
-function renderNavTabs() {
+function renderNavTabContents() {
     const _new_tab_name     = inputEl.value;
     if (!_new_tab_name) { return }    
 
@@ -231,7 +233,7 @@ function renderNavTabs() {
     addNavTabEventListeners()
 }
 
-function renderLeads(_leadsClassMap) {
+function renderPageNotes(_leadsClassMap) {
     let _listItems  = ""
     let _page       = getPage();
     let _classLeads = _leadsClassMap.get(_page);
@@ -270,7 +272,7 @@ function renderLeads(_leadsClassMap) {
     }
 }
 
-if (leadsClassMap.size !== 0) {
-    renderLeads(leadsClassMap);
+if (notesClassMap.size !== 0) {
+    renderPageNotes(notesClassMap);
 }
 
