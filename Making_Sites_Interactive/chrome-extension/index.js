@@ -19,63 +19,68 @@ let ulMap         = new Map();
 let ulActive      = undefined;
 let dragging      = undefined;
 let draggedOver   = undefined;
-console.log(leadsClassMap)
 
 
-setActiveUl()
-setTabMap(navTabs, navTabContent)
+set_ulActive()
+set_ulMap(navTabs, navTabContent)
+addNavTabEventListeners()
 
 inputBtn.addEventListener("click", function () {
     if (!inputEl.value) { return };
     
-    const _label = getUlLabel()
+    const _label = getPage()
 
     if (!leadsClassMap.has(_label)) {
         leadsClassMap.set(_label, []);
     }
     leadsClassMap.get(_label).push(inputEl.value);
 
-    addToLocalStorage(leadsClassMap);
+    updateLocalStorage(leadsClassMap);
 
     inputEl.value = "";
 })
 
 saveTabBtn.addEventListener("click", function () {
+    const _page = getPage();
+
+    // leadsClassMap.get(_page).push("hi_there");
+    // updateLocalStorage(leadsClassMap);
+
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        const _label = getUlLabel();
-        
-        leadsClassMap.get(_label).push(tabs[0].url);
-        addToLocalStorage(leadsClassMap);
+        leadsClassMap.get(_page).push("hi_there");//tabs[0].url);
+        updateLocalStorage(leadsClassMap);
     })
 })
 
-for (i = 0; i < navTabs.length; i++) {
-    let _tab = navTabs[i].className;
+function addNavTabEventListeners() {
+    for (i = 0; i < navTabs.length; i++) {
+        let _tab = navTabs[i].className;
 
-    navTabs[i].addEventListener("click", function () {
-        let _div = ulMap.get(_tab);
-        let _ul  = _div.children[0];
+        navTabs[i].addEventListener("click", function () {
+            let _div = ulMap.get(_tab);
+            let _ul  = _div.children[0];
 
-        for (let ii = 0; ii < navTabContent.length; ii++) {
-            navTabContent[ii].style.display = "none";
-        }
+            for (let ii = 0; ii < navTabContent.length; ii++) {
+                navTabContent[ii].style.display = "none";
+            }
 
-        for (let ii = 0; ii < ulElements.length; ii++) {
-            ulElements[ii].className = ulElements[ii].className.replace(" __active__", "");
-        }
+            for (let ii = 0; ii < ulElements.length; ii++) {
+                ulElements[ii].className = ulElements[ii].className.replace(" __active__", "");
+            }
 
-        _div.style.display = "block";
-        _ul.className += " __active__";
+            _div.style.display = "block";
+            _ul.className += " __active__";
 
-        setActiveUl()
-        renderLeads(leadsClassMap);
-    })
+            set_ulActive()
+            renderLeads(leadsClassMap);
+        })
+    }
 }
 
-function setTabMap(_navTabs, _navTabContent) {
+function set_ulMap(_navTabs, _navTabContent) {
     let ii   = 0;
     let _tab = undefined;
-    let _div  = undefined;
+    let _div = undefined;
 
     for (let i = 0; i < _navTabs.length; i++) {
         ii   = 0;
@@ -89,10 +94,9 @@ function setTabMap(_navTabs, _navTabContent) {
             ii++;
         }
     }
-    console.log("Active Tab: ", ulMap);
 }
 
-function setActiveUl() {
+function set_ulActive() {
     let i    = 0;
     let _ul  = undefined;
     ulActive = undefined;
@@ -104,32 +108,34 @@ function setActiveUl() {
         }
         i++;
     }
-    console.log("Active UL: ", ulActive);
 }
 
-function getUlLabel() {
+function getPage() {
     return ulActive.className.match(ul_finder)[0].trim();
 }
 
-function addToLocalStorage(_lead) {
-    localStorage.setItem("leadsClassMap", JSON.stringify([...leadsClassMap]));
+function updateLocalStorage(_leadsClassMap) {
+    localStorage.setItem("leadsClassMap", JSON.stringify([..._leadsClassMap]));
+    renderLeads(_leadsClassMap);
+}
+
+function deleteNoteEventHandler(e) {
+    const _page = getPage()
+    const _lead_to_delete = e.srcElement.id;
+    const _new_leadsClassMap = leadsClassMap.get(_page).filter(_lead => _lead !== _lead_to_delete);
+
+    console.log("_new_leadsClassMap: ", _new_leadsClassMap);
+    leadsClassMap.set(_page, _new_leadsClassMap);
+
+    updateLocalStorage(leadsClassMap);
     renderLeads(leadsClassMap);
-    setLeadsClassMap(leadsClassMap);
+
+    console.log(_page);
+    console.log(_lead_to_delete);
+    console.log(leadsClassMap);
 }
 
-function removeFromLocalStorage(e) {
-    const _label = getUlLabel()
-    const _lead  = e.srcElement.id;
-
-    if (leadsIdMap.has(_label, _lead)) {
-        leadsClassMap.splice(leadsClassMap.get(_lead), 1);
-        localStorage.setItem("leadsClassMap", JSON.stringify([...leadsClassMap]));
-        renderLeads(leadsClassMap);
-        setLeadsClassMap(leadsClassMap);
-    }
-}
-
-function copyLead(e) {
+function copyNoteEventHandler(e) {
     const lead = e.srcElement.id;
     let leadCopyStr = "";
 
@@ -154,49 +160,48 @@ function compare(e) {
     leadsClassMap.splice(leadsIdMap.get(dragging), 1);
     leadsClassMap.splice(leadsIdMap.get(draggedOver), 0, dragging);
     
-    addToLocalStorage(leadsClassMap);
+    updateLocalStorage(leadsClassMap);
 }
 
 function renderLeads(_leadsClassMap) {
     let _listItems  = ""
-    let _label      = getUlLabel();
-    let _classLeads = _leadsClassMap.get(_label);
+    let _page       = getPage();
+    let _classLeads = _leadsClassMap.get(_page);
     let _lead;
-    // console.log(_label)
 
     for (let i = 0; i < _classLeads.length; i++) {
         _lead = _classLeads[i];
         _listItems += `
-            <li class="list-lead li-${_label}" id="${_lead}" draggable="true">
-                <span id="${_lead}">
-                <button class="btn btn-lead copy-lead" id="${_lead}">${copy_emoji}</button>|
-                <a class="btn btn-lead link-lead" id="${_lead}" href="${_lead}" target="_blank">${link_emoji}</a>|
-                <button class="btn btn-lead delete-lead" id="${_lead}">${delete_emoji}</button>| 
+            <li class="list-lead li-${_page}" id="${_lead}" draggable="true">
+                <span id="${_page}">
+                <button class="btn btn-lead copy-lead-${_page}-${_lead}" id="${_lead}">${copy_emoji}</button>|
+                <a class="btn btn-lead link-lead-${_page}-${_lead}" id="${_lead}" href="${_lead}" target="_blank">${link_emoji}</a>|
+                <button class="btn btn-lead delete-lead-${_page}-${_lead}" id="${_lead}">${delete_emoji}</button>| 
                     ${_lead}
                 </span>
             </li>
         `;
     }
     ulActive.innerHTML = _listItems;
-    // console.log(ulActive)
 
-    const listElements   = document.getElementsByClassName("list-lead");
-    const deleteElements = document.getElementsByClassName("delete-lead");
-    const copyElements   = document.getElementsByClassName("copy-lead");
-
+    const listElements = document.getElementsByClassName(`li-${_page}`);
+    let   deleteElements;
+    let   copyElements;
     for (let i = 0; i < _classLeads.length; i++) {
-        _lead = _classLeads[i];
+        _lead = _classLeads[i]; 
 
-        listElements[i].addEventListener("drag", setDragging);
+        deleteElements = document.getElementsByClassName(`delete-lead-${_page}-${_lead}`)[0];
+        copyElements   = document.getElementsByClassName(`copy-lead-${_page}-${_lead}`)[0];
+
+        listElements[i].addEventListener("drag",     setDragging);
         listElements[i].addEventListener("dragover", setDraggedOver);
-        listElements[i].addEventListener("drop", compare);
+        listElements[i].addEventListener("drop",     compare);
 
-        deleteElements[i].addEventListener("click", removeFromLocalStorage);
-        copyElements[i].addEventListener("click", copyLead);
+        deleteElements.addEventListener("click", deleteNoteEventHandler);
+        copyElements.addEventListener("click",   copyNoteEventHandler);
     }
 }
 
-// console.log(leadsClassMap)
 if (leadsClassMap.size !== 0) {
     renderLeads(leadsClassMap);
 }
