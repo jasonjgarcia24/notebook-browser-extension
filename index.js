@@ -1,6 +1,7 @@
 const inputEl          = document.getElementById("input-el");
 const inputBtn         = document.getElementById("button-input");
 const saveTabBtn       = document.getElementById("button-tab");
+const newNavTabBtn     = document.getElementById("__tab_create__");
 const deleteBtn        = document.getElementById("button-delete");
 const navTabs          = document.getElementsByClassName("tab");
 const navTabContent    = document.getElementsByClassName("container-content-ul");
@@ -21,6 +22,7 @@ let dragging      = undefined;
 let draggedOver   = undefined;
 
 
+setActivePage(navTabs[0].className.match(tab_finder)[0].trim())
 set_ulActive()
 set_ulMap(navTabs, navTabContent)
 addNavTabEventListeners()
@@ -49,11 +51,17 @@ saveTabBtn.addEventListener("click", function () {
     })
 })
 
-function addNavTabEventListeners() {
-    for (i = 0; i < navTabs.length; i++) {
-        let _page = navTabs[i].className;
+newNavTabBtn.addEventListener("click", function () {
+    renderNavTabs()
+})
 
-        navTabs[i].addEventListener("click", function () {
+function addNavTabEventListeners() {
+    const _navTabs = document.getElementsByClassName("tab");
+
+    for (i = 0; i < _navTabs.length; i++) {
+        let _page = _navTabs[i].className.match(tab_finder)[0].trim();
+        
+        _navTabs[i].addEventListener("click", function () {
             setActivePage(_page);
         })
     }
@@ -113,19 +121,29 @@ function ensurePageExists(_page) {
 }
 
 function setActivePage(_page) {
-    let _div = ulMap.get(_page);
-    let _ul  = _div.children[0];
+    const _tab = document.getElementsByClassName(`tab-${_page}`)[0];
+    const _div = document.getElementsByClassName(`container-content-ul-${_page}`)[0];
+    const _ul  = document.getElementsByClassName(`ul-${_page}`)[0];
+    const _active_div = document.getElementsByClassName("__div_active__")[0];
 
-    for (let ii = 0; ii < navTabContent.length; ii++) {
-        navTabContent[ii].style.display = "none";
+    function removeActiveClass(_str) {
+        const _className = `__${_str}_active__`;
+
+        Array.from(document.getElementsByClassName(_className)).forEach(_element => {
+            _element.className  = _element.className.replace(` __${_str}_active__`, "");
+        })
     }
 
-    for (let ii = 0; ii < ulElements.length; ii++) {
-        ulElements[ii].className = ulElements[ii].className.replace(" __ul_active__", "");
-    }
+    if (_active_div) { _active_div.style.display = "none"; }
+
+    removeActiveClass("tab")
+    removeActiveClass("div")
+    removeActiveClass("ul")
 
     _div.style.display = "block";
-    _ul.className += " __ul_active__";
+    _tab.className += " __tab_active__";
+    _div.className += " __div_active__";
+    _ul.className  += " __ul_active__";
 
     set_ulActive()
     renderLeads(leadsClassMap);
@@ -182,6 +200,35 @@ function compare(e) {
     leadsClassMap.get(_page).splice(_idx_draggedOver, 0, dragging);
     
     updateLocalStorage(leadsClassMap);
+}
+
+function renderNavTabs() {
+    const _new_tab_name     = inputEl.value;
+    if (!_new_tab_name) { return }    
+
+    const _current_nav_tabs = document.getElementsByClassName("tab");
+    if (Array.from(_current_nav_tabs).filter(
+        _element => _element.className.includes(`tab-${_new_tab_name}`)
+    ).length) { return }
+
+    const _div_container    = document.getElementById("container-content");
+    const _tab_container    = document.getElementById("container-tab");
+    const _new_tab          = document.createElement("a");
+    const _new_div          = document.createElement("div");
+    const _new_ul           = document.createElement("ul");
+
+    _new_tab.className = `tab tab-${_new_tab_name}`;
+    _new_div.className = `container-content-ul container-content-ul-${_new_tab_name}`;    
+    _new_ul.className  = `content-ul ul-${_new_tab_name}`;
+
+    _new_tab.href        = "#";
+    _new_tab.textContent = _new_tab_name;
+
+    _tab_container.appendChild(_new_tab);
+    _div_container.appendChild(_new_div);
+    _new_div.appendChild(_new_ul);
+
+    addNavTabEventListeners()
 }
 
 function renderLeads(_leadsClassMap) {
