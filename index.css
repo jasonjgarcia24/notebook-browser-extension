@@ -32,7 +32,7 @@ body {
     border-radius: 0px 100% 100% 0;
 }
 
-.container-home-content {
+.container-content {
     margin: 0;
     padding: 15px;
     position: inherit;
@@ -88,9 +88,11 @@ input {
     transform: translateY(1px);
 }
 
-.tab {    
+.tab,
+.__tab_create__ {    
     background: #9ac9f8;
     color: #242424;
+    text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.2);
 }
 
 .tab,
@@ -105,21 +107,34 @@ input {
     text-decoration: none;
 }
 
-.tab-home,
-.tab-home:hover {
+.__tab_create__,
+.__tab_create__:hover {
+    font-size: 19px;
+    float: left;
+    margin: 0;
+    padding: 6px 10px;
+    border-top: 1px solid #2e4d6d;
+    border-right: 1px solid #2e4d6d;
+    border-bottom: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.__tab_create__,
+.__tab_create__:hover {
     border-left: 1px solid #2e4d6d;
 }
 
 .tab:hover,
 .tab:focus,
-.tab:active {
+.tab:active,
+.__tab_create__:hover,
+.__tab_create__:focus,
+.__tab_create__:active,
+.__tab_active__ {
     background: #5086bd;
     color: whitesmoke;
-}
-
-.tab active {
-    background: #5086bd;
-    color: whitesmoke;
+    text-shadow: 1px 1px 1px rgba(1, 1, 1, 0.4);
 }
 
 .btn-lead {
@@ -127,7 +142,7 @@ input {
     background: none;
     border: none;
     cursor: pointer;
-    text-shadow: 0px 3px 2px rgba(1, 1, 1, 0.4);
+    text-shadow: 1px 1px 1px rgba(1, 1, 1, 0.4);
 }
 
 .delete-lead:active,
