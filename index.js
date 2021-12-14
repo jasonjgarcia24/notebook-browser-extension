@@ -5,7 +5,7 @@ const newNavTabBtn    = document.getElementById("__tab_create__");
 const deleteBtn       = document.getElementById("button-delete");
 const ulElements      = document.getElementsByClassName("content-ul");
 
-const home_tab       = "Home";
+const home_page      = "Home";
 const active_tab_str = " __tab_active__";
 const active_div_str = " __div_active__";
 const active_ul_str  = " __ul_active__";
@@ -16,6 +16,8 @@ const ul_finder      = /(?<=ul-)\w*[^ ]+/;
 const li_finder      = /(?<=li-)\w*[^ ]+/;
 const tab_finder     = /(?<=tab-)\w*[^ ]+/;
 
+const user_input = () => { return inputEl.value.replace(" ", "~"); }
+
 let notesIdMap      = new Map();
 let notesClassMap   = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
 let ulElementMap    = new Map(JSON.parse(localStorage.getItem("ulElementMap")));
@@ -25,19 +27,18 @@ let ulActive        = undefined;
 let dragging        = undefined;
 let draggedOver     = undefined;
 
-set_ulElementMap();
-renderNavTabContents();
-addNavTabEventListeners();
+createNewPage(home_page);
 
-inputBtn.addEventListener("click", function () {
+inputBtn.addEventListener("click", function () {    
     if (!inputEl.value) { return };
-    
-    const _label = getPage()
 
-    if (!notesClassMap.has(_label)) {
-        notesClassMap.set(_label, []);
+    const _note = user_input()
+    const _page = getPage()
+
+    if (!notesClassMap.has(_page)) {
+        notesClassMap.set(_page, []);
     }
-    notesClassMap.get(_label).push(inputEl.value);
+    notesClassMap.get(_page).push(_note);
 
     updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 
@@ -54,50 +55,37 @@ saveTabBtn.addEventListener("click", function () {
 })
 
 newNavTabBtn.addEventListener("click", function () {
-    renderNavTabContents()
+    const _page = user_input();
+    if (!_page) { return }
+
+    createNewPage(_page);
+    inputEl.value = "";
 })
 
 function addNavTabEventListeners() {
-    const _navTabs = document.getElementsByClassName("tab");
+    const _tabs = document.getElementsByClassName("tab");
+    const _page = (_tab) => { return _tab.className.match(tab_finder)[0].trim() };
 
-    for (i = 0; i < _navTabs.length; i++) {
-        let _page = _navTabs[i].className.match(tab_finder)[0].trim();
-        
-        _navTabs[i].addEventListener("click", function () {
-            setActivePage(_page);
+    Array.from(_tabs).forEach(_tab => {
+        _tab.addEventListener("click", function () {
+            setActivePage(_page(_tab));
+            set_ulActive();
+            renderPageNotes(notesClassMap);
         })
-    }
+    })
 }
 
-function set_ulElementMap() {
-    let _tabs = ulElementMap.keys();
-    let _page = undefined;
-    let _ul   = undefined;
+function set_ulElementMap(_page) {
+    let _tab = `tab tab-${_page}`;
+    let _ul  = `content-ul ul-${_page}`;
 
-    if (!_tabs.length) {
-        const _tab = `tab tab-${home_tab}`;
-        const _ul  = `content-ul ul-${home_tab}`;
-
-        ulElementMap.set(_tab, _ul);
-
-        renderNavTabContents()
-        setActivePage(home_tab);
-    }
-    else {
-        Array.from(_tabs).forEach(_tab => {
-            _page = _tab.className.match(tab_finder)[0].trim();
-            _ul   = document.getElementsByClassName(`ul-${_page}`)[0];
-            ulElementMap.set(_tab.className, _ul.className);
-        })
-    }
+    ulElementMap.set(_tab, _ul);
 
     updateLocalStorage("ulElementMap", ulElementMap);
-    set_ulActive();
 }
 
 function set_ulActive() {
-
-    ulActive = _ul;
+    ulActive = document.getElementsByClassName(active_ul_str)[0];
 }
 
 function getPage() {
@@ -112,7 +100,7 @@ function ensurePageExists(_page) {
 
     if (!_storedPage) {
         notesClassMap.set(_page, new Array());
-        updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
+        updateLocalStorage("notesClassMap", notesClassMap);
 
         _storedPage = notesClassMap.get(_page);
     }
@@ -144,9 +132,6 @@ function setActivePage(_page) {
     _tab.className += active_tab_str;
     _div.className += active_div_str;
     _ul.className  += active_ul_str;
-
-    set_ulActive();
-    renderPageNotes(notesClassMap);
 }
 
 function updateLocalStorage(_key, _val, _func) {
@@ -195,14 +180,21 @@ function compare(e) {
     updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 }
 
-function renderNavTabContents() {
-    // const _new_tab_name = inputEl.value;
-    // if (!_new_tab_name) { return }
+function createNewPage(_page) {   
+    ensurePageExists(_page)
+    set_ulElementMap(_page);
+    renderPageBase();
+    setActivePage(_page);
+    set_ulActive();
+    renderPageNotes(notesClassMap);
+    addNavTabEventListeners();
+}
 
+function renderPageBase() {
     const _div_container     = document.getElementById("container-content");
     const _tab_container     = document.getElementById("container-tab");
     const _existing_nav_tabs = document.getElementsByClassName("tab")
-    
+
     ulElementMap.forEach((_ul, _tab) => {
         if (!Array.from(_existing_nav_tabs).filter(
             _existing_tab => _existing_tab.className.includes(_tab)
@@ -217,28 +209,13 @@ function renderNavTabContents() {
             _ulElement.className  = _ul;
 
             _tabElement.href        = "#";
-            _tabElement.textContent = _tabName;
+            _tabElement.textContent = _tabName.replace("~", " ");
 
             _tab_container.appendChild(_tabElement);
             _div_container.appendChild(_divElement);
             _divElement.appendChild(_ulElement);
         }
     })
-
-    // const _new_tab       = document.createElement("a");
-    // const _new_div       = document.createElement("div");
-    // const _new_ul        = document.createElement("ul");
-
-    // _new_tab.className = `tab tab-${_new_tab_name}`;
-    // _new_div.className = `container-content-ul container-content-ul-${_new_tab_name}`;    
-    // _new_ul.className  = `content-ul ul-${_new_tab_name}`;
-
-    // _new_tab.href        = "#";
-    // _new_tab.textContent = _new_tab_name;
-
-    // _tab_container.appendChild(_new_tab);
-    // _div_container.appendChild(_new_div);
-    // _new_div.appendChild(_new_ul);
 }
 
 function renderPageNotes(_notesClassMap) {
