@@ -1,31 +1,32 @@
-const inputEl          = document.getElementById("input-el");
-const inputBtn         = document.getElementById("button-input");
-const saveTabBtn       = document.getElementById("button-tab");
-const newNavTabBtn     = document.getElementById("__tab_create__");
-const deleteBtn        = document.getElementById("button-delete");
-const navTabs          = document.getElementsByClassName("tab");
-const navTabContent    = document.getElementsByClassName("container-content-ul");
-const ulElements       = document.getElementsByClassName("content-ul");
+const inputEl         = document.getElementById("input-el");
+const inputBtn        = document.getElementById("button-input");
+const saveTabBtn      = document.getElementById("button-tab");
+const newNavTabBtn    = document.getElementById("__tab_create__");
+const deleteBtn       = document.getElementById("button-delete");
+const ulElements      = document.getElementsByClassName("content-ul");
 
-const home_tab     = "home";
-const delete_emoji = "\u{274c}";
-const copy_emoji   = "\u{1f4cb}";
-const link_emoji   = "\u{1f517}";
-const ul_finder    = /(?<=ul-)\w*[^ ]+/;
-const li_finder    = /(?<=li-)\w*[^ ]+/;
-const tab_finder   = /(?<=tab-)\w*[^ ]+/;
+const home_tab       = "Home";
+const active_tab_str = " __tab_active__";
+const active_div_str = " __div_active__";
+const active_ul_str  = " __ul_active__";
+const delete_emoji   = "\u{274c}";
+const copy_emoji     = "\u{1f4cb}";
+const link_emoji     = "\u{1f517}";
+const ul_finder      = /(?<=ul-)\w*[^ ]+/;
+const li_finder      = /(?<=li-)\w*[^ ]+/;
+const tab_finder     = /(?<=tab-)\w*[^ ]+/;
 
-let notesIdMap    = new Map();
-let notesClassMap = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
-let ulMap         = new Map();
-let ulActive      = undefined;
-let dragging      = undefined;
-let draggedOver   = undefined;
+let notesIdMap      = new Map();
+let notesClassMap   = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
+let ulElementMap    = new Map(JSON.parse(localStorage.getItem("ulElementMap")));
 
+let navTabUlContent = undefined;
+let ulActive        = undefined;
+let dragging        = undefined;
+let draggedOver     = undefined;
 
-setActivePage(home_tab);
-set_ulActive();
-set_ulMap(navTabs, navTabContent);
+set_ulElementMap();
+renderNavTabContents();
 addNavTabEventListeners();
 
 inputBtn.addEventListener("click", function () {
@@ -38,7 +39,7 @@ inputBtn.addEventListener("click", function () {
     }
     notesClassMap.get(_label).push(inputEl.value);
 
-    updateLocalStorage(notesClassMap);
+    updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 
     inputEl.value = "";
 })
@@ -48,7 +49,7 @@ saveTabBtn.addEventListener("click", function () {
 
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         notesClassMap.get(_page).push(tabs[0].url);
-        updateLocalStorage(notesClassMap);
+        updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
     })
 })
 
@@ -68,38 +69,35 @@ function addNavTabEventListeners() {
     }
 }
 
-function set_ulMap(_navTabs, _navTabContent) {
-    let ii    = 0;
+function set_ulElementMap() {
+    let _tabs = ulElementMap.keys();
     let _page = undefined;
-    let _div  = undefined;
+    let _ul   = undefined;
 
-    for (let i = 0; i < _navTabs.length; i++) {
-        ii   = 0;
-        _page = _navTabs[i].className.match(tab_finder)[0].trim();
+    if (!_tabs.length) {
+        const _tab = `tab tab-${home_tab}`;
+        const _ul  = `content-ul ul-${home_tab}`;
 
-        while (ii < _navTabContent.length && _div !== _page) {
-            _div = _navTabContent[ii].className.match(ul_finder)[0].trim();
-            if (_div === _page) {
-                ulMap.set(_navTabs[i].className, _navTabContent[ii]);
-            }
-            ii++;
-        }
+        ulElementMap.set(_tab, _ul);
+
+        renderNavTabContents()
+        setActivePage(home_tab);
     }
-    console.log(ulMap)
+    else {
+        Array.from(_tabs).forEach(_tab => {
+            _page = _tab.className.match(tab_finder)[0].trim();
+            _ul   = document.getElementsByClassName(`ul-${_page}`)[0];
+            ulElementMap.set(_tab.className, _ul.className);
+        })
+    }
+
+    updateLocalStorage("ulElementMap", ulElementMap);
+    set_ulActive();
 }
 
 function set_ulActive() {
-    let i    = 0;
-    let _ul  = undefined;
-    ulActive = undefined;
 
-    while (!ulActive && i < ulElements.length) {
-        _ul = ulElements[i];
-        if (_ul.className.includes(" __ul_active__")) {
-            ulActive = _ul;
-        }
-        i++;
-    }
+    ulActive = _ul;
 }
 
 function getPage() {
@@ -114,7 +112,7 @@ function ensurePageExists(_page) {
 
     if (!_storedPage) {
         notesClassMap.set(_page, new Array());
-        updateLocalStorage(notesClassMap)
+        updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 
         _storedPage = notesClassMap.get(_page);
     }
@@ -126,7 +124,7 @@ function setActivePage(_page) {
     const _tab = document.getElementsByClassName(`tab-${_page}`)[0];
     const _div = document.getElementsByClassName(`container-content-ul-${_page}`)[0];
     const _ul  = document.getElementsByClassName(`ul-${_page}`)[0];
-    const _active_div = document.getElementsByClassName("__div_active__")[0];
+    const _active_div = document.getElementsByClassName(active_div_str)[0];
 
     function removeActiveClass(_str) {
         const _className = `__${_str}_active__`;
@@ -143,17 +141,17 @@ function setActivePage(_page) {
     removeActiveClass("ul")
 
     _div.style.display = "block";
-    _tab.className += " __tab_active__";
-    _div.className += " __div_active__";
-    _ul.className  += " __ul_active__";
+    _tab.className += active_tab_str;
+    _div.className += active_div_str;
+    _ul.className  += active_ul_str;
 
-    set_ulActive()
+    set_ulActive();
     renderPageNotes(notesClassMap);
 }
 
-function updateLocalStorage(_leadsClassMap) {
-    localStorage.setItem("notesClassMap", JSON.stringify([..._leadsClassMap]));
-    renderPageNotes(_leadsClassMap);
+function updateLocalStorage(_key, _val, _func) {
+    localStorage.setItem(_key, JSON.stringify([..._val]));
+    if (_func) { _func(_val); }
 }
 
 function deleteNoteEventHandler(e) {
@@ -161,15 +159,8 @@ function deleteNoteEventHandler(e) {
     const _lead_to_delete = e.srcElement.id;
     const _new_leadsClassMap = notesClassMap.get(_page).filter(_lead => _lead !== _lead_to_delete);
 
-    console.log("_new_leadsClassMap: ", _new_leadsClassMap);
     notesClassMap.set(_page, _new_leadsClassMap);
-
-    updateLocalStorage(notesClassMap);
-    renderPageNotes(notesClassMap);
-
-    console.log(_page);
-    console.log(_lead_to_delete);
-    console.log(notesClassMap);
+    updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 }
 
 function copyNoteEventHandler(e) {
@@ -201,42 +192,59 @@ function compare(e) {
     notesClassMap.get(_page).splice(_idx_dragging, 1);
     notesClassMap.get(_page).splice(_idx_draggedOver, 0, dragging);
     
-    updateLocalStorage(notesClassMap);
+    updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 }
 
 function renderNavTabContents() {
-    const _new_tab_name     = inputEl.value;
-    if (!_new_tab_name) { return }    
+    // const _new_tab_name = inputEl.value;
+    // if (!_new_tab_name) { return }
 
-    const _current_nav_tabs = document.getElementsByClassName("tab");
-    if (Array.from(_current_nav_tabs).filter(
-        _element => _element.className.includes(`tab-${_new_tab_name}`)
-    ).length) { return }
+    const _div_container     = document.getElementById("container-content");
+    const _tab_container     = document.getElementById("container-tab");
+    const _existing_nav_tabs = document.getElementsByClassName("tab")
+    
+    ulElementMap.forEach((_ul, _tab) => {
+        if (!Array.from(_existing_nav_tabs).filter(
+            _existing_tab => _existing_tab.className.includes(_tab)
+        ).length) {
+            const _tabName    = _tab.match(tab_finder)[0].trim();
+            const _tabElement = document.createElement("a");
+            const _divElement = document.createElement("div");
+            const _ulElement  = document.createElement("ul");
+            
+            _tabElement.className = _tab;
+            _divElement.className = `container-content-ul container-content-ul-${_tabName}`;
+            _ulElement.className  = _ul;
 
-    const _div_container    = document.getElementById("container-content");
-    const _tab_container    = document.getElementById("container-tab");
-    const _new_tab          = document.createElement("a");
-    const _new_div          = document.createElement("div");
-    const _new_ul           = document.createElement("ul");
+            _tabElement.href        = "#";
+            _tabElement.textContent = _tabName;
 
-    _new_tab.className = `tab tab-${_new_tab_name}`;
-    _new_div.className = `container-content-ul container-content-ul-${_new_tab_name}`;    
-    _new_ul.className  = `content-ul ul-${_new_tab_name}`;
+            _tab_container.appendChild(_tabElement);
+            _div_container.appendChild(_divElement);
+            _divElement.appendChild(_ulElement);
+        }
+    })
 
-    _new_tab.href        = "#";
-    _new_tab.textContent = _new_tab_name;
+    // const _new_tab       = document.createElement("a");
+    // const _new_div       = document.createElement("div");
+    // const _new_ul        = document.createElement("ul");
 
-    _tab_container.appendChild(_new_tab);
-    _div_container.appendChild(_new_div);
-    _new_div.appendChild(_new_ul);
+    // _new_tab.className = `tab tab-${_new_tab_name}`;
+    // _new_div.className = `container-content-ul container-content-ul-${_new_tab_name}`;    
+    // _new_ul.className  = `content-ul ul-${_new_tab_name}`;
 
-    addNavTabEventListeners()
+    // _new_tab.href        = "#";
+    // _new_tab.textContent = _new_tab_name;
+
+    // _tab_container.appendChild(_new_tab);
+    // _div_container.appendChild(_new_div);
+    // _new_div.appendChild(_new_ul);
 }
 
-function renderPageNotes(_leadsClassMap) {
+function renderPageNotes(_notesClassMap) {
     let _listItems  = ""
     let _page       = getPage();
-    let _classLeads = _leadsClassMap.get(_page);
+    let _classLeads = _notesClassMap.get(_page);
     let _lead;
 
     for (let i = 0; i < _classLeads.length; i++) {
