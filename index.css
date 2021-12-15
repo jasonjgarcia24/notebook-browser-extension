@@ -137,19 +137,6 @@ input {
     text-shadow: 1px 1px 1px rgba(1, 1, 1, 0.4);
 }
 
-.btn-lead {
-    padding: 0 2px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-shadow: 1px 1px 1px rgba(1, 1, 1, 0.4);
-}
-
-.delete-lead:active,
-.copy-lead:active {
-    transform: translateY(1px);
-}
-
 ul {
     margin-top: 10px;
     padding-left: 0;
@@ -160,10 +147,54 @@ li {
     margin-top: 5px;
 }
 
+.div-note {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+}
+
+.div-note-link {
+    display: inherit;
+    width: 100%;
+    align-items: inherit;
+}
+
+.span-note_title {
+    display: inherit;
+    width: 100%;
+    align-items: inherit;
+}
+
+.btn-note {
+    padding: 0 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-shadow: 1px 1px 1px rgba(1, 1, 1, 0.4);
+}
+
 a, a:visited {
     text-decoration: none;
 }
 
+.link-note {
+    margin-left: 4px;
+    position: absolute;
+}
+
 a:hover {
     text-decoration: underline;
+}
+
+.btn-note:active {
+    transform: translateY(1px);
+}
+
+.input-note_title {
+    height: 12px;
+    width: 100%;
+    margin: 0 0 0 4px;
+    line-height: 1;
+    box-sizing: border-box;
 }

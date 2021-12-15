@@ -1,9 +1,9 @@
-const inputEl         = document.getElementById("input-el");
-const inputBtn        = document.getElementById("button-input");
-const saveTabBtn      = document.getElementById("button-tab");
-const newNavTabBtn    = document.getElementById("__tab_create__");
-const deleteBtn       = document.getElementById("button-delete");
-const ulElements      = document.getElementsByClassName("content-ul");
+const inputEl      = document.getElementById("input-el");
+const inputBtn     = document.getElementById("button-input");
+const saveTabBtn   = document.getElementById("button-tab");
+const newNavTabBtn = document.getElementById("__tab_create__");
+const deleteBtn    = document.getElementById("button-delete");
+const ulElements   = document.getElementsByClassName("content-ul");
 
 const home_page      = "Home";
 const active_tab_str = " __tab_active__";
@@ -11,16 +11,17 @@ const active_div_str = " __div_active__";
 const active_ul_str  = " __ul_active__";
 const delete_emoji   = "\u{274c}";
 const copy_emoji     = "\u{1f4cb}";
-const link_emoji     = "\u{1f517}";
+const edit_emoji     = "\u{270d}";
+const save_emoji     = "\u{1f4be}"
 const ul_finder      = /(?<=ul-)\w*[^ ]+/;
 const li_finder      = /(?<=li-)\w*[^ ]+/;
 const tab_finder     = /(?<=tab-)\w*[^ ]+/;
 
 const user_input = () => { return inputEl.value.replace(" ", "~"); }
 
-let notesIdMap      = new Map();
-let notesClassMap   = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
-let ulElementMap    = new Map(JSON.parse(localStorage.getItem("ulElementMap")));
+let anchorTextMap = new Map(JSON.parse(localStorage.getItem("anchorTextMap")));
+let notesClassMap = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
+let ulElementMap  = new Map(JSON.parse(localStorage.getItem("ulElementMap")));
 
 let navTabUlContent = undefined;
 let ulActive        = undefined;
@@ -31,15 +32,15 @@ createNewPage(home_page);
 
 inputBtn.addEventListener("click", function () {    
     if (!inputEl.value) { return };
+    if (!getAvailability(inputEl.value)) { return };
 
     const _note = user_input()
     const _page = getPage()
 
-    if (!notesClassMap.has(_page)) {
-        notesClassMap.set(_page, []);
-    }
+    anchorTextMap.set(_note, _note)
     notesClassMap.get(_page).push(_note);
 
+    updateLocalStorage("anchorTextMap", anchorTextMap);
     updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 
     inputEl.value = "";
@@ -48,8 +49,10 @@ inputBtn.addEventListener("click", function () {
 saveTabBtn.addEventListener("click", function () {
     const _page = getPage();
 
-    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-        notesClassMap.get(_page).push(tabs[0].url);
+    chrome.tabs.query({active: true, currentWindow: true}, function (_tabs) {
+        anchorTextMap.set(_tabs[0].url, _tabs[0].url)
+        notesClassMap.get(_page).push(_tabs[0].url);
+        updateLocalStorage("anchorTextMap", anchorTextMap);
         updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
     })
 })
@@ -61,6 +64,19 @@ newNavTabBtn.addEventListener("click", function () {
     createNewPage(_page);
     inputEl.value = "";
 })
+
+function getAvailability(_note) {
+    let isAvailable = true;
+
+    notesClassMap.forEach((_notes, _page) => {
+        if (Array.from(_notes).includes(_note)) {
+            isAvailable = false;
+            alert(`"${_note}" exists in the "${_page}" page as "${anchorTextMap.get(_note)}"!!\n\nYou must first remove it from there to add it to this page.`)
+        }
+    })
+
+    return isAvailable;
+}
 
 function addNavTabEventListeners() {
     const _tabs = document.getElementsByClassName("tab");
@@ -139,25 +155,63 @@ function updateLocalStorage(_key, _val, _func) {
     if (_func) { _func(_val); }
 }
 
-function deleteNoteEventHandler(e) {
-    const _page = getPage()
-    const _lead_to_delete = e.srcElement.id;
-    const _new_leadsClassMap = notesClassMap.get(_page).filter(_lead => _lead !== _lead_to_delete);
+function revertNoteEventHandler(e) {
+    const _note  = e.srcElement.id;
+    const _page  = getPage();
+    const _input = document.getElementsByClassName(`input-note_title-${_page}-${_note}`)[0];
+    const _link  = document.getElementsByClassName(`link-note-${_page}-${_note}`)[0]
 
-    notesClassMap.set(_page, _new_leadsClassMap);
-    updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
+    if (_link.style.visibility === "hidden") {
+        const _inputSpan = document.getElementsByClassName(`span-note_title-${_page}-${_note}`)[0];
+
+        _input.value = "";
+        _link.style.visibility      = "visible";
+        _inputSpan.style.visibility = "hidden";
+    }
+    else {
+        const _note_to_delete = e.srcElement.id;
+        const _new_notesClassMap = notesClassMap.get(_page).filter(_note => _note !== _note_to_delete);
+
+        anchorTextMap.delete(_note);
+        notesClassMap.set(_page, _new_notesClassMap);
+        updateLocalStorage("anchorTextMap", anchorTextMap);
+        updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
+    }
+}
+
+function saveNoteTitleEventHandler(e) {
+    const _note  = e.srcElement.id;
+    const _page = getPage();
+    const _input = document.getElementsByClassName(`input-note_title-${_page}-${_note}`)[0];
+    const _link  = document.getElementsByClassName(`link-note-${_page}-${_note}`)[0];
+
+    if (_input.value) {
+        const _inputSpan = document.getElementsByClassName(`span-note_title-${_page}-${_note}`)[0];
+
+        anchorTextMap.set(_note, _input.value);
+        updateLocalStorage("anchorTextMap", anchorTextMap);
+
+        _link.textContent = _input.value;
+        _input.value      = "";
+
+        _link.style.visibility      = "visible";
+        _inputSpan.style.visibility = "hidden";
+    }
+}
+
+function editNoteEventHandler(e) {
+    const _note  = e.srcElement.id;
+    const _page  = getPage();
+    const _link  = document.getElementsByClassName(`link-note-${_page}-${_note}`)[0]
+    const _input = document.getElementsByClassName(`span-note_title-${_page}-${_note}`)[0];
+
+    _link.style.visibility  = "hidden";
+    _input.style.visibility = "visible";
 }
 
 function copyNoteEventHandler(e) {
-    const lead = e.srcElement.id;
-    let leadCopyStr = "";
-
-    if (notesIdMap.has(lead)) {
-        leadCopyStr = lead.split(" ");
-        leadCopyStr = leadCopyStr[leadCopyStr.length - 1];
-
-        navigator.clipboard.writeText(leadCopyStr);
-    }
+    const _note = e.srcElement.id;
+    navigator.clipboard.writeText(_note);
 }
 
 function setDragging(e) {
@@ -219,40 +273,53 @@ function renderPageBase() {
 }
 
 function renderPageNotes(_notesClassMap) {
-    let _listItems  = ""
-    let _page       = getPage();
-    let _classLeads = _notesClassMap.get(_page);
-    let _lead;
+    const _page       = getPage();
+    const _classNotes = _notesClassMap.get(_page);
+    let _listItems    = "";
+    let _note         = undefined;
 
-    for (let i = 0; i < _classLeads.length; i++) {
-        _lead = _classLeads[i];
+    for (let i = 0; i < _classNotes.length; i++) {
+        _note = _classNotes[i];
+
         _listItems += `
-            <li class="list-lead li-${_page}" id="${_lead}" draggable="true">
-                <span id="${_lead}">
-                <button class="btn btn-lead copy-lead-${_page}-${_lead}" id="${_lead}">${copy_emoji}</button>|
-                <a class="btn btn-lead link-lead-${_page}-${_lead}" id="${_lead}" href="${_lead}" target="_blank">${link_emoji}</a>|
-                <button class="btn btn-lead delete-lead-${_page}-${_lead}" id="${_lead}">${delete_emoji}</button>| 
-                    ${_lead}
-                </span>
+            <li class="list-note li-${_page}" id="${_note}" draggable="true">
+                <div class="div-note" id="${_note}">
+                    <button class="btn btn-note copy-note-${_page}-${_note}" id="${_note}">${copy_emoji}</button> |
+                    <button class="btn btn-note edit-note-${_page}-${_note}" id="${_note}">${edit_emoji}</button> |
+                    <button class="btn btn-note delete-note-${_page}-${_note}" id="${_note}">${delete_emoji}</button> | 
+                    <div class="div-note-link">
+                        <span class="span-note_title span-note_title-${_page}-${_note}" style="visibility: hidden">
+                            <button class="btn btn-note save-note_title-${_page}-${_note}" id="${_note}">${save_emoji}</button> | 
+                            <input class="input input-note_title input-note_title-${_page}-${_note}" id="${_note}" type="text" placeholder="Update display name..." />
+                        </span>
+                        <a class="link link-note link-note-${_page}-${_note}" href=${_note} target="_blank">${anchorTextMap.get(_note)}</a>
+                    </div>
+                </div>
             </li>
         `;
     }
     ulActive.innerHTML = _listItems;
 
     const listElements = document.getElementsByClassName(`li-${_page}`);
-    let   deleteElements;
-    let   copyElements;
-    for (let i = 0; i < _classLeads.length; i++) {
-        _lead = _classLeads[i]; 
+    let revertElements;
+    let saveElements;
+    let editElements;
+    let copyElements;
+    for (let i = 0; i < _classNotes.length; i++) {
+        _note = _classNotes[i]; 
 
-        deleteElements = document.getElementsByClassName(`delete-lead-${_page}-${_lead}`)[0];
-        copyElements   = document.getElementsByClassName(`copy-lead-${_page}-${_lead}`)[0];
+        revertElements = document.getElementsByClassName(`delete-note-${_page}-${_note}`)[0];
+        saveElements   = document.getElementsByClassName(`save-note_title-${_page}-${_note}`)[0];
+        editElements   = document.getElementsByClassName(`edit-note-${_page}-${_note}`)[0];
+        copyElements   = document.getElementsByClassName(`copy-note-${_page}-${_note}`)[0];
 
         listElements[i].addEventListener("drag",     setDragging);
         listElements[i].addEventListener("dragover", setDraggedOver);
         listElements[i].addEventListener("drop",     compare);
 
-        deleteElements.addEventListener("click", deleteNoteEventHandler);
+        revertElements.addEventListener("click", revertNoteEventHandler);
+        saveElements.addEventListener("click",   saveNoteTitleEventHandler);
+        editElements.addEventListener("click",   editNoteEventHandler);
         copyElements.addEventListener("click",   copyNoteEventHandler);
     }
 }
