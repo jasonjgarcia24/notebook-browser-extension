@@ -22,18 +22,24 @@ const user_input = () => { return inputEl.value.replace(" ", "~"); }
 let anchorTextMap = new Map(JSON.parse(localStorage.getItem("anchorTextMap")));
 let notesClassMap = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
 let pageClassMap  = new Map(JSON.parse(localStorage.getItem("pageClassMap")));
-let pageOrder     = JSON.parse(localStorage.getItem("pageOrder")) || new Array;
+let pageOrder     = JSON.parse(localStorage.getItem("pageOrder"));
 
 let navTabUlContent = undefined;
 let ulActive        = undefined;
 let dragging        = undefined;
 let draggedOver     = undefined;
 
+
+if (!pageOrder) {
+    pageOrder = ["Home"];
+    updateLocalStorage("pageOrder", pageOrder);
+}
+
 createNewPage(home_page);
 
 inputBtn.addEventListener("click", function () {    
     if (!inputEl.value) { return };
-    if (!getAvailability(inputEl.value)) { return };
+    if (!getNoteAvailability(inputEl.value)) { return };
 
     const _note = user_input()
     const _page = getPage()
@@ -51,7 +57,7 @@ saveTabBtn.addEventListener("click", function () {
     const _page = getPage();
 
     chrome.tabs.query({active: true, currentWindow: true}, function (_tabs) {
-        if (!getAvailability(_tabs[0].url)) { return };
+        if (!getNoteAvailability(_tabs[0].url)) { return };
 
         anchorTextMap.set(_tabs[0].url, _tabs[0].url)
         notesClassMap.get(_page).push(_tabs[0].url);
@@ -63,12 +69,16 @@ saveTabBtn.addEventListener("click", function () {
 newNavTabBtn.addEventListener("click", function () {
     const _page = user_input();
     if (!_page) { return }
+    if (!getPageAvailability(inputEl.value)) { return };
+
+    pageOrder.push(_page);
+    updateLocalStorage("pageOrder", pageOrder);
 
     createNewPage(_page);
     inputEl.value = "";
 })
 
-function getAvailability(_note) {
+function getNoteAvailability(_note) {
     let isAvailable = true;
 
     notesClassMap.forEach((_notes, _page) => {
@@ -77,6 +87,17 @@ function getAvailability(_note) {
             alert(`"${_note}" exists in the "${_page.replace("~", " ")}" page as "${anchorTextMap.get(_note)}"!!\n\nYou must first remove it from there to add it to this page.`)
         }
     })
+
+    return isAvailable;
+}
+
+function getPageAvailability(_page) {
+    let isAvailable = true;
+
+    if (pageOrder.includes(_page)) {
+        isAvailable = false;
+        alert(`"${_page}" page already exists!!`)
+    }
 
     return isAvailable;
 }
@@ -239,7 +260,6 @@ function compare(_) {
 }
 
 function compareTabs(_) {
-    console.log("compareTabs")
     const _idx_dragging    = pageOrder.indexOf(dragging);
     const _idx_draggedOver = pageOrder.indexOf(draggedOver);
     let _divElement;
