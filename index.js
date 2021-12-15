@@ -21,7 +21,8 @@ const user_input = () => { return inputEl.value.replace(" ", "~"); }
 
 let anchorTextMap = new Map(JSON.parse(localStorage.getItem("anchorTextMap")));
 let notesClassMap = new Map(JSON.parse(localStorage.getItem("notesClassMap")));
-let ulElementMap  = new Map(JSON.parse(localStorage.getItem("ulElementMap")));
+let pageClassMap  = new Map(JSON.parse(localStorage.getItem("pageClassMap")));
+let pageOrder     = JSON.parse(localStorage.getItem("pageOrder")) || new Array;
 
 let navTabUlContent = undefined;
 let ulActive        = undefined;
@@ -50,6 +51,8 @@ saveTabBtn.addEventListener("click", function () {
     const _page = getPage();
 
     chrome.tabs.query({active: true, currentWindow: true}, function (_tabs) {
+        if (!getAvailability(_tabs[0].url)) { return };
+
         anchorTextMap.set(_tabs[0].url, _tabs[0].url)
         notesClassMap.get(_page).push(_tabs[0].url);
         updateLocalStorage("anchorTextMap", anchorTextMap);
@@ -71,7 +74,7 @@ function getAvailability(_note) {
     notesClassMap.forEach((_notes, _page) => {
         if (Array.from(_notes).includes(_note)) {
             isAvailable = false;
-            alert(`"${_note}" exists in the "${_page}" page as "${anchorTextMap.get(_note)}"!!\n\nYou must first remove it from there to add it to this page.`)
+            alert(`"${_note}" exists in the "${_page.replace("~", " ")}" page as "${anchorTextMap.get(_note)}"!!\n\nYou must first remove it from there to add it to this page.`)
         }
     })
 
@@ -92,12 +95,13 @@ function addNavTabEventListeners() {
 }
 
 function set_ulElementMap(_page) {
+    let _div = `container-content-ul container-content-ul-${_page}`;
     let _tab = `tab tab-${_page}`;
     let _ul  = `content-ul ul-${_page}`;
 
-    ulElementMap.set(_tab, _ul);
+    pageClassMap.set(_page, [_div, _tab, _ul]);
 
-    updateLocalStorage("ulElementMap", ulElementMap);
+    updateLocalStorage("pageClassMap", pageClassMap);
 }
 
 function set_ulActive() {
@@ -223,7 +227,7 @@ function setDraggedOver(e) {
     draggedOver = e.target.id;
 }
 
-function compare(e) {
+function compare(_) {
     const _page = getPage();
     const _idx_dragging    = notesClassMap.get(_page).indexOf(dragging);
     const _idx_draggedOver = notesClassMap.get(_page).indexOf(draggedOver);
@@ -234,40 +238,84 @@ function compare(e) {
     updateLocalStorage("notesClassMap", notesClassMap, renderPageNotes);
 }
 
-function createNewPage(_page) {   
+function compareTabs(_) {
+    console.log("compareTabs")
+    const _idx_dragging    = pageOrder.indexOf(dragging);
+    const _idx_draggedOver = pageOrder.indexOf(draggedOver);
+    let _divElement;
+    let _tabElement;
+    let _ulElement;
+
+    pageOrder.splice(_idx_dragging, 1);
+    pageOrder.splice(_idx_draggedOver, 0, dragging);
+
+    pageClassMap.forEach(([_div, _tab, _ul], _page) => {
+        _divElement = document.getElementsByClassName(_div)[0];
+        _tabElement = document.getElementsByClassName(_tab)[0];
+        _ulElement  = document.getElementsByClassName(_ul)[0];
+
+        _divElement.remove();
+        _tabElement.remove();
+        if (_ulElement) { _ulElement.remove(); }
+
+    })
+    createNewPage(home_page);
+    setActivePage(dragging);
+    set_ulActive();
+    renderPageNotes(notesClassMap);
+    updateLocalStorage("pageOrder", pageOrder);
+}
+
+function createNewPage(_page) {
     ensurePageExists(_page)
     set_ulElementMap(_page);
-    renderPageBase();
+    renderPageBase(pageOrder);
     setActivePage(_page);
     set_ulActive();
     renderPageNotes(notesClassMap);
     addNavTabEventListeners();
+
+    if (!pageOrder.includes(_page)) {
+        pageOrder.push(_page);
+        updateLocalStorage("pageOrder", pageOrder);
+    }
 }
 
-function renderPageBase() {
+function renderPageBase(_pageOrder) {
     const _div_container     = document.getElementById("container-content");
     const _tab_container     = document.getElementById("container-tab");
     const _existing_nav_tabs = document.getElementsByClassName("tab")
 
-    ulElementMap.forEach((_ul, _tab) => {
+    let _div, _tab, _ul;
+
+    _pageOrder.forEach((_page) => {
+        [_div, _tab, _ul] = pageClassMap.get(_page);
+
         if (!Array.from(_existing_nav_tabs).filter(
             _existing_tab => _existing_tab.className.includes(_tab)
         ).length) {
-            const _tabName    = _tab.match(tab_finder)[0].trim();
             const _tabElement = document.createElement("a");
             const _divElement = document.createElement("div");
             const _ulElement  = document.createElement("ul");
             
-            _tabElement.className = _tab;
-            _divElement.className = `container-content-ul container-content-ul-${_tabName}`;
-            _ulElement.className  = _ul;
+            _divElement.className = _div;
+            _divElement.id        = _page;
 
+            _tabElement.className   = _tab;
+            _tabElement.id          = _page;
             _tabElement.href        = "#";
-            _tabElement.textContent = _tabName.replace("~", " ");
+            _tabElement.textContent = _page.replace("~", " ");
+
+            _ulElement.className = _ul;
+            _ulElement.id        = _page;
 
             _tab_container.appendChild(_tabElement);
             _div_container.appendChild(_divElement);
             _divElement.appendChild(_ulElement);
+            
+            _tabElement.addEventListener("drag",     setDragging);
+            _tabElement.addEventListener("dragover", setDraggedOver);
+            _tabElement.addEventListener("drop",     compareTabs);    
         }
     })
 }
@@ -288,11 +336,11 @@ function renderPageNotes(_notesClassMap) {
                     <button class="btn btn-note edit-note-${_page}-${_note}" id="${_note}">${edit_emoji}</button> |
                     <button class="btn btn-note delete-note-${_page}-${_note}" id="${_note}">${delete_emoji}</button> | 
                     <div class="div-note-link">
-                        <span class="span-note_title span-note_title-${_page}-${_note}" style="visibility: hidden">
+                        <span class="span-note_title span-note_title-${_page}-${_note}" id="${_note}" style="visibility: hidden">
                             <button class="btn btn-note save-note_title-${_page}-${_note}" id="${_note}">${save_emoji}</button> | 
                             <input class="input input-note_title input-note_title-${_page}-${_note}" id="${_note}" type="text" placeholder="Update display name..." />
                         </span>
-                        <a class="link link-note link-note-${_page}-${_note}" href=${_note} target="_blank">${anchorTextMap.get(_note)}</a>
+                        <a class="link link-note link-note-${_page}-${_note}" id="${_note}" href=${_note} target="_blank">${anchorTextMap.get(_note)}</a>
                     </div>
                 </div>
             </li>
@@ -306,7 +354,7 @@ function renderPageNotes(_notesClassMap) {
     let editElements;
     let copyElements;
     for (let i = 0; i < _classNotes.length; i++) {
-        _note = _classNotes[i]; 
+        _note = _classNotes[i];
 
         revertElements = document.getElementsByClassName(`delete-note-${_page}-${_note}`)[0];
         saveElements   = document.getElementsByClassName(`save-note_title-${_page}-${_note}`)[0];
